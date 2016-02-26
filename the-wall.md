@@ -88,3 +88,56 @@ If you should go skating on the thin ice of modern life, dragging behind you the
 ```
 
 Since I had host system connect to my system and I got no shell, it seemed like it would trigger some sort of action on the host itself. Not having shell means we're back to where we were. More close review of the tcpdump log didn't help much.
+
+Sounds like we have a reverse port knocking in place and now port 80 is open on the server after I got the host connected to port 1337 of my system.
+
+```shell
+nmap -T5 -A 192.168.168.200
+
+Starting Nmap 6.47 ( http://nmap.org ) at 2016-02-26 13:28 CST
+Nmap scan report for 192.168.168.200
+Host is up (0.00023s latency).
+Not shown: 999 filtered ports
+PORT   STATE SERVICE VERSION
+80/tcp open  http    OpenBSD httpd
+|_http-methods: No Allow or Public header in OPTIONS response (status code 405)
+|_http-title: Site doesn't have a title (text/html).
+MAC Address: 08:00:27:AE:CB:01 (Cadmus Computer Systems)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose
+Running: OpenBSD 5.X
+OS CPE: cpe:/o:openbsd:openbsd:5
+OS details: OpenBSD 5.0 - 5.4
+Network Distance: 1 hop
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.23 ms 192.168.168.200
+
+OS and Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 130.18 seconds
+```
+
+Cool, we've port 80 accessible to us. No `robots.txt` this time but on a run of `nikto`, we see that it is running [PostNuke CMS](http://www.postnuke.com/module-Content-view-pid-6.html). Upon google search, I see that its development has been stopped and its notorious for too many bugs.
+
+```shell
+nikto -h 192.168.168.200
+- Nikto v2.1.5
+---------------------------------------------------------------------------
++ Target IP:          192.168.168.200
++ Target Hostname:    192.168.168.200
++ Target Port:        80
++ Start Time:         2016-02-26 13:28:40 (GMT-6)
+---------------------------------------------------------------------------
++ Server: OpenBSD httpd
++ The anti-clickjacking X-Frame-Options header is not present.
++ Retrieved x-powered-by header: PHP/5.6.11
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ /postnuke/modules.php?op=modload&name=Web_Links&file=index&req=viewlinkdetails&lid=666&ttitle=Mocosoft Utilities\"%3<script>alert('Vulnerable')</script>: Postnuke Phoenix 0.7.2.3 is vulnerable to Cross Site Scripting (XSS). http://www.cert.org/advisories/CA-2000-02.html.
++ 6544 items checked: 3 error(s) and 3 item(s) reported on remote host
++ End Time:           2016-02-26 13:28:53 (GMT-6) (13 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+```
+
+**WIP**

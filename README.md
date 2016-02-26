@@ -6,4 +6,4 @@
 - [CSharp : VulnJSON](csharp-vulnjson.md)
 - [Primer](primer.md)
 - [SickOS 1.1](sickos-oscp-like.md)
-- [The Wall](the-wall.md)
+- [The Wall](the-wall.md) - wip
