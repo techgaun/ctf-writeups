@@ -140,4 +140,84 @@ nikto -h 192.168.168.200
 + 1 host(s) tested
 ```
 
-**WIP**
+Trying to access anything on `http://192.168.168.200/postnuke/<anyfile_that_exists>.php` gives me a 403 Forbidden with the text `Access denied.`. Upon checking the source code of root page, I see the following comment:
+```shell
+<!--If you want to find out what's behind these cold eyes, you'll just have to claw your way through this disguise. - Pink Floyd, The Wall
+
+Did you know? The Publius Enigma is a mystery surrounding the Division Bell album.  Publius promised an unspecified reward for solving the
+riddle, and further claimed that there was an enigma hidden within the artwork.
+
+737465673d3333313135373330646262623337306663626539373230666536333265633035-->
+```
+
+The `hex_to_ascii()` process gives the string `steg=33115730dbbb370fcbe9720fe632ec05` and cracking the md5 gives the value of `33115730dbbb370fcbe9720fe632ec05` to be `divisionbell`. Seeing the image on index/root page, the comment and the possible username `steg` suggests me the use of the steganography. I was not having any success on the `/postnuke` path either. I ran a exif analysis using `exif`, `exifprobe` and `exiftags` and the following was what I got with `exifprobe`.
+
+```shell
+$ exifprobe pink_floyd.jpg
+File Name = pink_floyd.jpg
+File Type = JPEG
+File Size = 114362
+@000000000=0       :  <JPEG_SOI>
+@0x0000002=2       :    <JPEG_APP0> 0xffe0 length 16, 'JFIF'
+@0x000000b=11      :      Version       = 1.2
+@0x000000d=13      :      Units         = 'aspect ratio'
+@0x000000e=14      :      Xdensity      = 100
+@0x0000010=16      :      Ydensity      = 100
+@0x0000012=18      :      XThumbnail    = 0
+@0x0000013=19      :      YThumbnail    = 0
+@0x0000013=19      :    </JPEG_APP0>
+@0x0000014=20      :    <JPEG_DQT> length 67
+@0x0000059=89      :    <JPEG_DQT> length 67
+@0x000009e=158     :    <JPEG_SOF_0> length 17, 8 bits/sample, components=3, width=750, height=717
+@0x00000b1=177     :    <JPEG_DHT> length 31 table class = 0 table id = 0
+@0x00000d2=210     :    <JPEG_DHT> length 181 table class = 0 table id = 1
+@0x0000189=393     :    <JPEG_DHT> length 31 table class = 1 table id = 0
+@0x00001aa=426     :    <JPEG_DHT> length 181 table class = 1 table id = 1
+@0x0000261=609     :    <JPEG_SOS> length 12  start of JPEG data, 3 components 537750 pixels
+@0x001beb8=114360  :  <JPEG_EOI> JPEG length 114362
+-0x001beb9=114361  :  END OF FILE
+@000000000=0       :  Start of JPEG baseline DCT compressed primary image [750x717] length 114362 (APP0)
+-0x001beb9=114361  :    End of JPEG primary image data
+Number of images = 1
+File Format = JPEG/APP0/JFIF
+```
+
+I ran the `strings` command and saw some odds at the top.
+```shell
+$ strings pink_floyd.jpg | head -n5
+JFIF
+$3br
+%&'()*456789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz
+	#3R
+&'()*56789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz
+```
+
+I tried the same command on the couple of other image files and didn't see such pattern in any of those files but still it could be false positive. Still I kept this in my mind and started exploring more. I searched for [steganography tools](https://en.wikipedia.org/wiki/Steganography_tools) and started downloading and running them. I had a success with steghide.
+
+```shell
+$ steghide extract -sf pink_floyd.jpg
+Enter passphrase:
+wrote extracted data to "pink_floyd_syd.txt".
+
+$ cat pink_floyd_syd.txt
+Hey Syd,
+
+I hear you're full of dust and guitars?
+
+If you want to See Emily Play, just use this key: U3lkQmFycmV0dA==|f831605ae34c2399d1e5bb3a4ab245d0
+
+Roger
+
+Did you know? In 1965, The Pink Floyd Sound changed their name to Pink Floyd.  The name was inspired
+by Pink Anderson and Floyd Council, two blues muscians on the Piedmont Blues record Syd Barret had in
+his collection.
+```
+
+We've a new information and the immediately important bit one is `U3lkQmFycmV0dA==|f831605ae34c2399d1e5bb3a4ab245d0`
+
+```shell
+$ base64 -d <<< U3lkQmFycmV0dA==
+SydBarrett
+```
+
+And, the md5 hash was found to be hash of `pinkfloydrocks`. Cool, this looked like its going good so far.
