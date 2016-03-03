@@ -220,4 +220,288 @@ $ base64 -d <<< U3lkQmFycmV0dA==
 SydBarrett
 ```
 
-And, the md5 hash was found to be hash of `pinkfloydrocks`. Cool, this looked like its going good so far.
+And, the md5 hash was found to be hash of `pinkfloydrocks`. Cool, this looked like its going good so far. I knew that I could not go any far with `/postnuke/modules.php` because I could not figure out how to bypass this 403. Thinking for a while, the `1965` made a strike in my mind so I tried listening on this port immediately.
+
+```shell
+$ nc -l 1965
+```
+
+I waited for couple of minutes and it didn't connect back like it did previously. Then, I tried to telnet.
+
+*Note: My target IP is 192.168.168.39 now. I had to re-import appliance due to vhdd failure*
+
+```shell
+$ telnet 192.168.168.39 1965
+Trying 192.168.168.39...
+Connected to 192.168.168.200.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.0
+```
+
+Holy cow! The ssh listener and I had some information gathered earlier which could be credentials to this.
+
+```shell
+$ ssh SydBarrett@192.168.168.39 -p 1965
+SydBarrett@192.168.168.39's password:
+Could not chdir to home directory /home/SydBarrett: No such file or directory
+This service allows sftp connections only.
+Connection to 192.168.168.39 closed.
+```
+
+So, we know that we need to use sftp client instead.
+```shell
+$ sftp -P 1965 SydBarrett@192.168.168.39
+SydBarrett@192.168.168.39's password:
+Connected to 192.168.168.39.
+sftp> ls -a1
+.
+..
+.mail
+bio.txt
+syd_barrett_profile_pic.jpg  
+sftp> cat bio.txt
+Invalid command.
+sftp> get bio.txt /tmp
+Fetching /bio.txt to /tmp/bio.txt
+/bio.txt                                                                                                                                                                                              100% 1912     1.9KB/s   00:00    
+sftp> get syd_barrett_profile_pic.jpg /tmp
+Fetching /syd_barrett_profile_pic.jpg to /tmp/syd_barrett_profile_pic.jpg
+/syd_barrett_profile_pic.jpg
+sftp> ls -a1 .mail
+.mail/.
+.mail/..
+.mail/.stash
+.mail/sent-items
+sftp> get .mail/.stash /tmp/stash
+Fetching /.mail/.stash/ to /tmp/stash
+Cannot download non-regular file: /.mail/.stash/
+sftp> get .mail/sent-items /tmp/
+Fetching /.mail/sent-items to /tmp/sent-items
+/.mail/sent-items
+sftp> ls -a1 .mail/.stash
+.mail/.stash/.
+.mail/.stash/..
+.mail/.stash/eclipsed_by_the_moon
+sftp> get .mail/.stash/eclipsed_by_the_moon /tmp
+Fetching /.mail/.stash/eclipsed_by_the_moon to /tmp/eclipsed_by_the_moon
+/.mail/.stash/eclipsed_by_the_moon                                                                                                                                                                    100%   47MB  15.5MB/s   00:03
+
+$ cat /tmp/bio.txt
+"Roger Keith "Syd" Barrett (6 January 1946 – 7 July 2006) was an English musician, composer, singer, songwriter, and painter. Best known as a founder member of the band Pink Floyd, Barrett was the lead singer, guitarist and principal songwriter in its early years and is credited with naming the band. Barrett was excluded from Pink Floyd in April 1968 after David Gilmour took over as their new frontman, and was briefly hospitalized amid speculation of mental illness.
+
+Barrett was musically active for less than ten years. With Pink Floyd, he recorded four singles, their debut album (and contributed to the second one), and several unreleased songs. Barrett began his solo career in 1969 with the single "Octopus" from his first solo album, The Madcap Laughs (1970). The album was recorded over the course of a year with five different producers (Peter Jenner, Malcolm Jones, David Gilmour, Roger Waters and Barrett himself). Nearly two months after Madcap was released, Barrett began working on his second and final album, Barrett (1970), produced by Gilmour and featuring contributions from Richard Wright. He went into self-imposed seclusion until his death in 2006. In 1988, an album of unreleased tracks and outtakes, Opel, was released by EMI with Barrett's approval.
+
+Barrett's innovative guitar work and exploration of experimental techniques such as dissonance, distortion and feedback influenced many musicians, including David Bowie and Brian Eno. His recordings are also noted for their strongly English-accented vocal delivery. After leaving music, Barrett continued with painting and dedicated himself to gardening. Biographies began appearing in the 1980s. Pink Floyd wrote and recorded several tributes to him, most notably the 1975 album Wish You Were Here, which included "Shine On You Crazy Diamond", as homage to Barrett."
+
+Source: Wikipedia (https://en.wikipedia.org/wiki/Syd_Barrett)
+
+$ cat /tmp/sent-items
+Date: Sun, 24 Oct 1965 18:45:21 +0200
+From: Syd Barrett <syd@pink.floyd>
+Reply-To: Syd Barret <syd@pink.floyd>
+To: Roger Waters <roger@pink.floyd>
+Subject: Had to hide the stash
+
+Roger... I had to hide the stash.
+
+Usual deal.. just use the scalpel when you find it.
+
+Ok, sorry for that.
+
+Rock on man
+
+"Syd"
+
+$ file /tmp/eclipsed_by_the_moon
+/tmp/eclipsed_by_the_moon: gzip compressed data, last modified: Tue Nov 10 18:15:47 2015, from Unix
+```
+
+Now, I had a picture, a bio, an e-mail sent to Roger Waters regarding the hidden stash and hopefully the stash that Syd was referring to. I ran exif related tools and strings but nothing helpful. I ran out of pointers on what could be the passphrase for steghide. The `eclipsed_by_the_moon` was a gzip compressed file so I extracted it and went ahead.
+
+```shell
+$ tar xvfz eclipsed_by_the_moon
+eclipsed_by_the_moon.lsd
+```
+
+We have another file with extension `.lsd`.
+```shell
+$ file eclipsed_by_the_moon.lsd
+eclipsed_by_the_moon.lsd: DOS/MBR boot sector, code offset 0x3c+2, OEM-ID "MSDOS5.0", sectors/cluster 2, reserved sectors 8, root entries 512, Media descriptor 0xf8, sectors/FAT 188, sectors/track 63, heads 255, hidden sectors 2048, sectors 96256 (volumes > 32 MB) , serial number 0x9e322180, unlabeled, FAT (16 bit)
+```
+
+Hey, that's a DOS/MBR boot sector? I remember one of the previous notes referring to `scalpel` which is a known tool for recovering deleted files from the filesystems. So I was pretty sure that I had to use the disk recovery tools. I had `testdisk` installed on my system already and thought of using it. Upon running testdisk (`testdisk /tmp/eclipsed_by_the_moon.lsd`), I was able to find an image named `rogerwaters.jpg`.
+
+We got the image of rogerwaters with a dialog box.
+
+![Roger Waters](images/rogerwaters.jpg "Roger Waters")
+
+I initially thought this (`hello_is_there_anybody_in_there`) might be the passphrase for one of the last two images. Turned out it was not. Maybe I should try ssh/sftp again.
+
+```shell
+ssh -p 1965 RogerWaters@192.168.168.39
+RogerWaters@192.168.168.39's password:
+OpenBSD 5.8 (GENERIC) #1066: Sun Aug 16 02:33:00 MDT 2015
+
+                       .u!"`
+                   .x*"`
+               ..+"NP
+            .z""   ?
+          M#`      9     ,     ,
+                   9 M  d! ,8P'
+                   R X.:x' R'  ,
+                   F F' M  R.d'
+                   d P  @  E`  ,
+      ss           P  '  P  N.d'
+       x         ''        '
+       X               x             .
+       9     .f       !         .    $b
+       4;    $k      /         dH    $f
+       'X   ;$$     z  .       MR   :$
+        R   M$$,   :  d9b      M'   tM
+        M:  #'$L  ;' M `8      X    MR
+        `$;t' $F  # X ,oR      t    Q;
+         $$@  R$ H :RP' $b     X    @'
+         9$E  @Bd' $'   ?X     ;    W
+         `M'  `$M d$    `E    ;.o* :R   ..
+          `    '  "'     '    @'   '$o*"'   
+$
+```
+
+This time, it gave me the ssh access. So, I started further investigation from there.
+
+```shell
+$ ls -liah
+total 176
+16384 drwx------  3 RogerWaters  RogerWaters   512B Oct 28 09:29 .
+    2 drwxr-xr-x  7 root         wheel         512B Oct 24 17:36 ..
+16387 -rw-r--r--  1 RogerWaters  RogerWaters    87B Oct 24 17:35 .Xdefaults
+16388 -rw-r--r--  1 RogerWaters  RogerWaters   773B Oct 24 17:35 .cshrc
+16389 -rw-r--r--  1 RogerWaters  RogerWaters   103B Oct 24 17:35 .cvsrc
+16390 -rw-r--r--  1 RogerWaters  RogerWaters   398B Oct 26 04:01 .login
+16391 -rw-r--r--  1 RogerWaters  RogerWaters   175B Oct 24 17:35 .mailrc
+16392 -rw-r--r--  1 RogerWaters  RogerWaters   218B Oct 24 17:35 .profile
+16385 drwx------  2 RogerWaters  RogerWaters   512B Oct 26 03:56 .ssh
+16394 -rw-r--r--  1 RogerWaters  RogerWaters   2.8K Oct 26 08:57 bio.txt
+16393 -rw-r--r--  1 RogerWaters  RogerWaters     0B Oct 28 05:02 mbox
+16395 -rw-r--r--  1 RogerWaters  RogerWaters  47.0K Oct 26 06:16 roger_waters_profile_pic.jpg
+16396 -rw-r--r--  1 RogerWaters  RogerWaters  16.2K Oct 26 06:23 secret-diary
+```
+
+I decided to copy files quickly using scp.
+
+```shell
+$ mkdir /tmp/rogers
+$ scp -P 1965 -r RogerWaters@192.168.168.39:~ /tmp/rogers/
+RogerWaters@192.168.168.39's password:
+authorized_keys                                                                                                                                                                                       100%    0     0.0KB/s   00:00    
+.Xdefaults                                                                                                                                                                                            100%   87     0.1KB/s   00:00    
+.cshrc                                                                                                                                                                                                100%  773     0.8KB/s   00:00    
+.cvsrc                                                                                                                                                                                                100%  103     0.1KB/s   00:00    
+.login                                                                                                                                                                                                100%  398     0.4KB/s   00:00    
+.mailrc                                                                                                                                                                                               100%  175     0.2KB/s   00:00    
+.profile                                                                                                                                                                                              100%  218     0.2KB/s   00:00    
+mbox                                                                                                                                                                                                  100%    0     0.0KB/s   00:00    
+bio.txt                                                                                                                                                                                               100% 2853     2.8KB/s   00:00    
+roger_waters_profile_pic.jpg                                                                                                                                                                          100%   47KB  47.1KB/s   00:00    
+secret-diary                                                                                                                                                                                          100%   16KB  16.2KB/s   00:00  
+```
+
+Looking at the files, there were no obvious pointers to go ahead and the exif and steg analysis of the profile picture didn't produce anything either.
+
+So, I got back to the ssh session and started performing the basic enumerations to find various files that could be of interest for me to exploit the system. I started exploring the file system and tried to look for possible backdoors, daemons or vulnerable services.
+
+```shell
+$ uname -a
+OpenBSD thewall.localdomain 5.8 GENERIC#1066 i386
+$ find / -perm -6000 -type f -exec ls -liah {} + 2> /dev/null
+52079 -r-sr-sr-x  1 root          daemon         29.8K Aug 16  2015 /usr/bin/lpr
+52080 -r-sr-sr-x  1 root          daemon         25.8K Aug 16  2015 /usr/bin/lprm
+ 3280 -rws--s--x  1 NickMason     NickMason       7.1K Aug  8  2015 /usr/local/bin/brick
+ 3281 -rwsr-s---  1 DavidGilmour  RichardWright   7.3K Oct 25 07:58 /usr/local/bin/shineon
+26048 -r-sr-sr-x  2 root          authpf         21.8K Aug 16  2015 /usr/sbin/authpf
+26048 -r-sr-sr-x  2 root          authpf         21.8K Aug 16  2015 /usr/sbin/authpf-noip
+```
+
+Among the output above, the most interesting ones are `/usr/local/bin/brick` and `/usr/local/bin/shineon`. While `/usr/local/bin/shineon` seems to have tighter permission (we're logged in as RogerWaters), the `/usr/local/bin/brick` has the executable bit on for all users. Great! Maybe, not. I could not read the content of the file as-is or run `strings` over it.
+
+```shell
+$ /usr/local/bin/brick
+
+
+
+
+What have we here, laddie?
+Mysterious scribbings?
+A secret code?
+Oh, poems, no less!
+Poems everybody!
+
+
+
+
+Who is the only band member to be featured on every Pink Floyd album? : Nick Mason
+```
+
+I gave the name as `Nick Mason` after quick google search for confirmation and it got me logged in as `NickMason`. I later figured out that I had to input `Nick Mason` with the space in between although I would get error: `/bin/sh: Cannot determine current working directory`. But, hey we've something that takes input. Maybe its the injection point? Also, with quick playing, I figured out it would not take no more than 1024 characters as the input.
+
+```shell
+$ whoami
+NickMason
+$ groups NickMason
+NickMason
+$ cd /home/NickMason/
+$ ls -liah
+total 1576
+24576 drwx------  3 NickMason  NickMason   512B Aug  8  2015 .
+    2 drwxr-xr-x  7 root       wheel       512B Oct 24 17:36 ..
+24579 -rw-r--r--  1 NickMason  NickMason    87B Oct 24 17:34 .Xdefaults
+24580 -rw-r--r--  1 NickMason  NickMason   773B Oct 24 17:34 .cshrc
+24581 -rw-r--r--  1 NickMason  NickMason   103B Oct 24 17:34 .cvsrc
+24582 -rw-r--r--  1 NickMason  NickMason   398B Oct 24 17:34 .login
+24583 -rw-r--r--  1 NickMason  NickMason   175B Oct 24 17:34 .mailrc
+24584 -rw-r--r--  1 NickMason  NickMason   218B Oct 24 17:34 .profile
+24577 drwx------  2 NickMason  NickMason   512B Oct 28 04:48 .ssh
+24595 -rw-r--r--  1 NickMason  NickMason   1.3K Oct 26 08:58 bio.txt
+24602 -rw-r--r--  1 NickMason  NickMason     0B Oct 28 05:02 mbox
+24594 -rw-r--r--  1 NickMason  NickMason   749K Aug  8  2015 nick_mason_profile_pic.jpg
+$ cp nick_mason_profile_pic.jpg /tmp/
+$ chmod a+rw /tmp/nick_mason_profile_pic.jpg
+```
+
+Well, I could have just scp'd from the box itself to my system but either way, I wanted to get the file to the local because of the size unless it was a bit higher quality image. Anyway, once I copied the file to my system, I could not open it with the image viewer.
+
+```shell
+$ file nick_mason_profile_pic.jpg
+nick_mason_profile_pic.jpg: Ogg data, Vorbis audio, stereo, 44100 Hz, ~160000 bps, created by: Xiph.Org libVorbis I
+```
+
+It revealed that its an Ogg file.. Ahh, trying to deceive meh? :D I renamed and listened to the music. I also thought in the background that this could also be a steganography stuff again. I immediately remembered the `cat somefile.ogg sometext_to_hide.txt > my-awesome-music.ogg` trick and tried to unzip the file. Well, it didn't work. Honestly, this point was where I got stuck for really long time. I read a lot on how data could be encoded and saved on audio files and read various features of audios. This is where I had to take a hint but I was running out of ideas. I checked one of the walkthroughs quickly to see if my route is correct or not and I saw that I had to get Morse code from the audio.
+
+Rather than following the usual route now, I thought of playing with `sox`. I did come across [experimental morse decoder](http://morsecode.scphillips.com/labs/decoder/) written purely in javascript but didn't work on it.
+
+```shell
+$ sudo apt-get install -y sox
+$ sox nick_mason_profile_pic.ogg output.dat
+$ head -n10 output.dat
+; Sample Rate 44100
+; Channels 2
+               0                0               0
+   2.2675737e-05                0               0
+   4.5351474e-05                0               0
+   6.8027211e-05                0               0
+   9.0702948e-05                0               0
+   0.00011337868                0               0
+   0.00013605442                0               0
+   0.00015873016                0               0
+```
+
+I found some online post which had some information and also had done the work of creating morse code. I used the same [python script](codes/morse-code.py).
+
+```shell
+$ python morse-code.py
+ .....--...-............-..-..........-....-.--.......-........................-.................................................................................................................................................................--..-.--....-.-..-.....-.............-...---.-.--..--.----.........------....-.....---..........-........................................-..-....................................--.-...-......---.....-......---.-----.....-...-....-...-......---.---.-.-...---.........-..-.-............-...--.---.-.-.-.....-.....-.-......-.......--.---.-.-....-.-..-----.--.--..-----....-.--.-.-....-..----------.-...-.------.-.--.-------..-.----...-..---.-----.....-.--...........-........-.-..-....-.-...-..-.-.----............................-----.----.-.-..--..-..-....--..........-.....--..-.........-...------...--.-.-.....--.------..-------..-..--.-.....-.-...................-..-...---...-.-----.-.---.-.----..-..------.---.------------.---..-..--.-------....--.----------.--..----.--.-------.----.-.-..--.---.---...----.-..-...--.---.-..-.---.--.--.-----..---.-.--.-------......-.-..-..---.--......-..--.-..-.-....-------...-----....-...---...--..............-.......................................-.........-----.-.---.-.-....-.-.......---------...--.-.-....-..---.--...---.--......-.-...-.............-.-...-..--..-.----.................-.-............-...---.--..--....-..--.--.----.-.----..--.-.-....-----.-.--.--.------.------.----.-.-..---.-.--...--.......--.-..-.-.............-..-.-.-....--.-.---.....-...--.--...------.....---..---..........--..-.......-.....-.-.-.-.-.-.-.---.-.-.----................-............................................................................................................................................................................................................................................................................................................................................................................................................................................................-..................-..................-.....................................................................................................................................................................-........................................................................................ ..... ..... ..... . .
+```
+
+This looked good but it seemed I had to extract noise separately and run the sox and script over it (or the other way around?). I still need to play with it.
+
+#WIP
