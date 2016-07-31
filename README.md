@@ -7,3 +7,4 @@
 - [Primer](primer.md)
 - [SickOS 1.1](sickos-oscp-like.md)
 - [The Wall](the-wall.md)
+- [WebSec CTF](websec-ctf.md)
