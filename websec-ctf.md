@@ -58,4 +58,4 @@ exif laptop.jpg
 ### Gem #2
 - WebSec is powered by Mellivora and the javascript file seems to be modified. There's comment that will work as an answer.
 
-Later on, I joined the team to write the challenges for the CTF. I did solve some of the other challenges which I unfortunately didn't document. The CTF is already finished now but it was fun to play and later on right some of the challenges.
+Later on, I joined the team to write the challenges for the CTF. I did solve some of the other challenges which I unfortunately didn't document. The CTF is already finished now but it was fun to play and later on write some of the challenges.
